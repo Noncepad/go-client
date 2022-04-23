@@ -18,11 +18,12 @@ import (
 )
 
 type Configuration struct {
-	UseSSL   bool   `json:"ssl"`
-	Host     string `json:"host"`
-	Port     uint16 `json:"port"`
-	Cacert   string `json:"cacert,omitempty"`
-	HostName string `json:"hostname,omitempty"`
+	UseSSL    bool   `json:"ssl"`
+	Host      string `json:"host"`
+	Port      uint16 `json:"port"`
+	Cacert    string `json:"cacert,omitempty"`
+	HostName  string `json:"hostname,omitempty"`
+	ListenUrl string `json:"listen"`
 }
 
 func ConfigDefaultHostPort(c *Configuration) {
@@ -31,11 +32,17 @@ func ConfigDefaultHostPort(c *Configuration) {
 	c.HostName = host
 	c.Port = 443
 	c.UseSSL = true
+	c.ListenUrl = "0.0.0.0:8080"
 }
 
 func ConfigFromEnv() (*Configuration, error) {
 	c := new(Configuration)
 	var present bool
+
+	c.ListenUrl, present = os.LookupEnv("LISTEN_URL")
+	if !present {
+		c.ListenUrl = "0.0.0.0:8080"
+	}
 
 	c.Host, present = os.LookupEnv("SOLMATE_HOST")
 	if !present {

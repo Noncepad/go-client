@@ -19,11 +19,6 @@ func main() {
 
 	log.Printf("config=%+v", config)
 
-	listenUrl, present := os.LookupEnv("LISTEN_URL")
-	if !present {
-		log.Fatal("no listen url")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	sigChan := make(chan os.Signal, 1)
@@ -32,7 +27,7 @@ func main() {
 
 	serverErrorC := make(chan error, 1)
 	log.Print("starting server")
-	err = solmateRpc.Run(ctx, config, listenUrl, serverErrorC)
+	err = solmateRpc.Run(ctx, config, serverErrorC)
 	if err != nil {
 		log.Fatal(err)
 	}

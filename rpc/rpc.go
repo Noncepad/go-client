@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"context"
+	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/rpc"
+	"net/rpc/jsonrpc"
+	"time"
 
 	basic "github.com/noncepad/client/rpc/basic"
 	test "github.com/noncepad/client/rpc/test"
@@ -14,9 +16,10 @@ import (
 type external struct {
 }
 
-func Run(ctx context.Context, config *basic.Configuration, listenUrl string, serverErrorC chan<- error) error {
+func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- error) error {
+	server := rpc.NewServer()
 
-	err := rpc.Register(new(test.Arith))
+	err := server.Register(new(test.Arith))
 	if err != nil {
 		log.Print(err)
 		return err
@@ -27,7 +30,7 @@ func Run(ctx context.Context, config *basic.Configuration, listenUrl string, ser
 		log.Print(err)
 		return err
 	}
-	err = rpc.Register(b)
+	err = server.Register(b)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -37,25 +40,61 @@ func Run(ctx context.Context, config *basic.Configuration, listenUrl string, ser
 		log.Print(err)
 		return err
 	}
-	rpc.HandleHTTP()
 
-	l, err := net.Listen("tcp", listenUrl)
-	if err != nil {
-		log.Print(err)
-		return err
+	s := new(Server)
+	s.Rpc = server
+
+	server.HandleHTTP("/jsonrpc", "/jsonrpc_debug")
+
+	httpServer := &http.Server{
+		Addr:        config.ListenUrl,
+		Handler:     s,
+		ReadTimeout: 5 * time.Second,
 	}
-	go loopServe(l, serverErrorC)
-	go loopClose(ctx, l)
+
+	go loopServerListen(httpServer, serverErrorC)
+	go loopClose(ctx, httpServer)
 	log.Print("finished start up with no error")
+
 	return nil
 }
 
-func loopClose(ctx context.Context, l net.Listener) {
-	<-ctx.Done()
-	l.Close()
+type Server struct {
+	Rpc *rpc.Server
 }
 
-func loopServe(l net.Listener, errorC chan<- error) {
-	err := http.Serve(l, nil)
-	errorC <- err
+type HttpConn struct {
+	in  io.Reader
+	out io.Writer
+}
+
+func (c *HttpConn) Read(p []byte) (n int, err error)  { return c.in.Read(p) }
+func (c *HttpConn) Write(d []byte) (n int, err error) { return c.out.Write(d) }
+func (c *HttpConn) Close() error                      { return nil }
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/jsonrpc" {
+		serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
+		w.Header().Set("Content-type", "application/json")
+		w.WriteHeader(200)
+		err := s.Rpc.ServeRequest(serverCodec)
+		if err != nil {
+			log.Printf("Error while serving JSON request: %v", err)
+			http.Error(w, "Error while serving JSON request, details have been logged.", 500)
+			return
+		}
+	}
+}
+
+func loopServerListen(server *http.Server, errorC chan<- error) {
+	err := server.ListenAndServe()
+	if err != nil {
+		log.Print(err)
+		errorC <- err
+	}
+}
+
+func loopClose(ctx context.Context, l *http.Server) {
+	<-ctx.Done()
+	l.Close()
 }

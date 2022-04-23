@@ -72,9 +72,8 @@ func TestRpc(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	listenUrl := ":34001"
 	serverErrorC := make(chan error, 1)
-	err = solmateRpc.Run(ctx, config, listenUrl, serverErrorC)
+	err = solmateRpc.Run(ctx, config, serverErrorC)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +85,7 @@ func TestRpc(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	//make connection to rpc server
-	client, err := rpc.DialHTTP("tcp", listenUrl)
+	client, err := rpc.DialHTTP("tcp", config.ListenUrl)
 	if err != nil {
 		log.Fatalf("Error in dialing. %s", err)
 	}
