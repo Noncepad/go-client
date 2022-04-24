@@ -16,6 +16,7 @@ type SendBatchArgs struct {
 }
 
 type SendBatchResponse struct {
+	IsDone    bool     `json:"done"`
 	Signature []string `json:"signature"`
 }
 
@@ -24,7 +25,7 @@ func sendBatchRespToProto(resp *pbsol.SendBatchResponse) SendBatchResponse {
 	for i := 0; i < len(resp.Signature); i++ {
 		list[i] = base64.StdEncoding.EncodeToString(resp.Signature[i])
 	}
-	return SendBatchResponse{Signature: list}
+	return SendBatchResponse{Signature: list, IsDone: true}
 }
 
 type SendTxJob struct {
@@ -83,35 +84,44 @@ func (e1 Basic) GetSendTxResult(args SendTxJobStatusArgs, results *SendBatchResp
 	ans := e1.job_get(args.Id)
 	if ans == nil {
 		return errors.New("job does not exist")
+	} else if ans.IsDone {
+		*results = sendBatchRespToProto(ans.Ans)
+	} else {
+		*results = SendBatchResponse{IsDone: false, Signature: []string{}}
 	}
-	*results = sendBatchRespToProto(ans.Ans)
+
 	return nil
 }
 
 type TxJob struct {
-	Ans *pbsol.SendBatchResponse
-	Err error
+	IsDone bool
+	Ans    *pbsol.SendBatchResponse
+	Err    error
 }
 
 func (e1 Basic) get_job_id() int {
 	idC := make(chan int, 1)
 	e1.internalC <- func(in *internal) {
 		in.jobId++
-		idC <- in.jobId
+		id2 := in.jobId
+		idC <- id2
+		in.jobMap[id2] = &TxJob{IsDone: false}
 	}
 	return <-idC
 }
 
-func (e1 Basic) job_set(id int, d *pbsol.SendBatchResponse, err error) int {
-	idC := make(chan int, 1)
+func (e1 Basic) job_set(id int, d *pbsol.SendBatchResponse, err error) {
 	e1.internalC <- func(in *internal) {
-		in.jobId++
-		id2 := in.jobId
-		idC <- id2
-		in.jobMap[id2] = &TxJob{Err: err, Ans: d}
+		x, present := in.jobMap[id]
+		if present {
+			x.IsDone = true
+			x.Err = err
+			x.Ans = d
+			go e1.job_delete(id, 5*time.Minute)
+		} else {
+			log.Print("response from server with no job id")
+		}
 	}
-	go e1.job_delete(id, 5*time.Minute)
-	return <-idC
 }
 
 func (e1 Basic) job_delete(id int, expire time.Duration) {

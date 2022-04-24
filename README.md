@@ -46,6 +46,27 @@ curl -X POST -vv \
 
 The 3 options for `commitment` are `processed`,`confirmed`,and `finalized`.  The transactions must be serialized in base64.
 
+
+The response will be a job id.  The send_tx action takes over 30 seconds.
+
+```json
+{
+     "id":334
+}
+```
+
+## Get SendTx
+
+
+```bash
+curl -X POST -vv \
+     -H "Content-Type: application/json" \
+     -d '{"id":1,"method":"Basic.GetSendTxResult","params":[{"id":334}]}' \
+     --url http://localhost:8080/jsonrpc
+```
+
+The job id is `334` in this example.
+
 The response will be:
 
 ```json
