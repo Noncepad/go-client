@@ -40,6 +40,18 @@ curl -X POST -vv \
 ```bash
 curl -X POST -vv \
      -H "Content-Type: application/json" \
-     -d '{"id":1,"method":"Arith.Multiply","params":[{"A":1,"B":2}]}' \
+     -d '{"id":1,"method":"Basic.SendTx","params":[{"commitment":"processed","tx":["...serialized tx 1","...serialized tx 2",...]}]}' \
      --url http://localhost:8080/jsonrpc
 ```
+
+The 3 options for `commitment` are `processed`,`confirmed`,and `finalized`.  The transactions must be serialized in base64.
+
+The response will be:
+
+```json
+{
+    "signature":["...sig 1","... sig 2"]
+}
+```
+
+Signatures are formatted in base64.
