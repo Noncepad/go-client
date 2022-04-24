@@ -78,7 +78,7 @@ func (e1 Basic) SendTx(args SendBatchArgs, results *SendTxJob) error {
 
 func (e1 Basic) loopFinishSendTxJob(ctx context.Context, id int, payload *pbsol.SendBatchRequest) {
 	resp, err := e1.solanaClient.SendTx(ctx, payload)
-	log.Printf("recevied response for job id=%d", id)
+	log.Printf("recevied response for job id=%d with resp=%+v and err=%s", id, resp, err)
 	e1.job_set(id, resp, err)
 }
 
