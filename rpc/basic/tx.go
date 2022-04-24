@@ -21,6 +21,12 @@ type SendBatchResponse struct {
 }
 
 func sendBatchRespToProto(resp *pbsol.SendBatchResponse) SendBatchResponse {
+	if resp == nil {
+		return SendBatchResponse{IsDone: false, Signature: []string{}}
+	}
+	if resp.Signature == nil {
+		resp.Signature = make([][]byte, 0)
+	}
 	list := make([]string, len(resp.Signature))
 	for i := 0; i < len(resp.Signature); i++ {
 		list[i] = base64.StdEncoding.EncodeToString(resp.Signature[i])
