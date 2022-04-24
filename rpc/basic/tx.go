@@ -1,8 +1,11 @@
 package basic
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
+	"log"
+	"time"
 
 	pbsol "github.com/noncepad/client/proto/solana"
 )
@@ -24,7 +27,11 @@ func sendBatchRespToProto(resp *pbsol.SendBatchResponse) SendBatchResponse {
 	return SendBatchResponse{Signature: list}
 }
 
-func (e1 Basic) SendTx(args SendBatchArgs, results *SendBatchResponse) error {
+type SendTxJob struct {
+	Id int `json:"id"`
+}
+
+func (e1 Basic) SendTx(args SendBatchArgs, results *SendTxJob) error {
 	ctx, err := e1.Ctx()
 	if err != nil {
 		return err
@@ -52,10 +59,80 @@ func (e1 Basic) SendTx(args SendBatchArgs, results *SendBatchResponse) error {
 			return err
 		}
 	}
-	resp, err := e1.solanaClient.SendTx(ctx, payload)
-	if err != nil {
-		return err
-	}
-	*results = sendBatchRespToProto(resp)
+
+	id := e1.get_job_id()
+
+	*results = SendTxJob{Id: id}
+
+	go e1.loopFinishSendTxJob(ctx, id, payload)
+
 	return nil
+}
+
+func (e1 Basic) loopFinishSendTxJob(ctx context.Context, id int, payload *pbsol.SendBatchRequest) {
+	resp, err := e1.solanaClient.SendTx(ctx, payload)
+	log.Printf("recevied response for job id=%d", id)
+	e1.job_set(id, resp, err)
+}
+
+type SendTxJobStatusArgs struct {
+	Id int `json:"id"`
+}
+
+func (e1 Basic) GetSendTxResult(args SendTxJobStatusArgs, results *SendBatchResponse) error {
+	ans := e1.job_get(args.Id)
+	if ans == nil {
+		return errors.New("job does not exist")
+	}
+	*results = sendBatchRespToProto(ans.Ans)
+	return nil
+}
+
+type TxJob struct {
+	Ans *pbsol.SendBatchResponse
+	Err error
+}
+
+func (e1 Basic) get_job_id() int {
+	idC := make(chan int, 1)
+	e1.internalC <- func(in *internal) {
+		in.jobId++
+		idC <- in.jobId
+	}
+	return <-idC
+}
+
+func (e1 Basic) job_set(id int, d *pbsol.SendBatchResponse, err error) int {
+	idC := make(chan int, 1)
+	e1.internalC <- func(in *internal) {
+		in.jobId++
+		id2 := in.jobId
+		idC <- id2
+		in.jobMap[id2] = &TxJob{Err: err, Ans: d}
+	}
+	go e1.job_delete(id, 5*time.Minute)
+	return <-idC
+}
+
+func (e1 Basic) job_delete(id int, expire time.Duration) {
+	select {
+	case <-e1.ctx.Done():
+	case <-time.After(expire):
+		e1.internalC <- func(in *internal) {
+			delete(in.jobMap, id)
+		}
+	}
+}
+
+func (e1 Basic) job_get(id int) *TxJob {
+	dC := make(chan *TxJob, 1)
+	e1.internalC <- func(in *internal) {
+		x, present := in.jobMap[id]
+		if present {
+			dC <- x
+		} else {
+			dC <- nil
+		}
+	}
+	return <-dC
 }

@@ -16,6 +16,8 @@ type internal struct {
 	closeSignalCList []chan<- error
 	key              ApiKey
 	deleteC          chan<- struct{}
+	jobId            int
+	jobMap           map[int]*TxJob
 }
 
 func loopInternal(ctx context.Context, internalC <-chan func(*internal), apiKey ApiKey, sessionClient pbt.SessionClient) {
@@ -29,6 +31,7 @@ func loopInternal(ctx context.Context, internalC <-chan func(*internal), apiKey 
 	in.sessionClient = sessionClient
 	in.key = apiKey
 	in.deleteC = deleteC
+	in.jobMap = make(map[int]*TxJob)
 
 	doneC := ctx.Done()
 out:
