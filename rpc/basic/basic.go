@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	b1 "github.com/noncepad/client/cli/basic"
 	pbt "github.com/noncepad/client/proto/auth"
@@ -15,6 +16,7 @@ import (
 	pbsaas "github.com/noncepad/client/proto/saas"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 type Configuration struct {
@@ -99,12 +101,17 @@ type Basic struct {
 }
 
 func Dial(ctx context.Context, config *Configuration) (*grpc.ClientConn, error) {
+	var kacp = keepalive.ClientParameters{
+		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             2 * time.Second,  // wait 1 second for ping back
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
 	if config.UseSSL {
 		return grpc.DialContext(ctx, fmt.Sprintf("%s:%d", config.Host, config.Port), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 			ServerName: config.HostName,
-		})))
+		})), grpc.WithKeepaliveParams(kacp))
 	} else {
-		return grpc.DialContext(ctx, fmt.Sprintf("%s:%d", config.Host, config.Port), grpc.WithInsecure())
+		return grpc.DialContext(ctx, fmt.Sprintf("%s:%d", config.Host, config.Port), grpc.WithInsecure(), grpc.WithKeepaliveParams(kacp))
 	}
 
 }
