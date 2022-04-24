@@ -8,7 +8,6 @@ import (
 )
 
 type SendBatchArgs struct {
-	RequestWithJwt
 	Tx              []string `json:"tx"`
 	CommitmentLevel string   `json:"commitment"`
 }
@@ -26,6 +25,10 @@ func sendBatchRespToProto(resp *pbsol.SendBatchResponse) SendBatchResponse {
 }
 
 func (e1 Basic) SendTx(args SendBatchArgs, results *SendBatchResponse) error {
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
 	payload := &pbsol.SendBatchRequest{}
 
 	switch args.CommitmentLevel {
@@ -41,7 +44,7 @@ func (e1 Basic) SendTx(args SendBatchArgs, results *SendBatchResponse) error {
 	if len(args.Tx) < 1 {
 		return errors.New("no transactions")
 	}
-	var err error
+
 	payload.Tx = make([][]byte, len(args.Tx))
 	for i := 0; i < len(args.Tx); i++ {
 		payload.Tx[i], err = base64.StdEncoding.DecodeString(args.Tx[i])
@@ -49,7 +52,7 @@ func (e1 Basic) SendTx(args SendBatchArgs, results *SendBatchResponse) error {
 			return err
 		}
 	}
-	resp, err := e1.solanaClient.SendTx(e1.Ctx(args.Token), payload)
+	resp, err := e1.solanaClient.SendTx(ctx, payload)
 	if err != nil {
 		return err
 	}

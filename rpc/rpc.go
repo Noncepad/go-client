@@ -43,6 +43,7 @@ func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- e
 
 	s := new(Server)
 	s.Rpc = server
+	s.b = b
 
 	server.HandleHTTP("/jsonrpc", "/jsonrpc_debug")
 
@@ -61,6 +62,7 @@ func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- e
 
 type Server struct {
 	Rpc *rpc.Server
+	b   basic.Basic
 }
 
 type HttpConn struct {
@@ -74,6 +76,7 @@ func (c *HttpConn) Close() error                      { return nil }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/jsonrpc" {
+
 		serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(200)

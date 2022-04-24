@@ -17,7 +17,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("config=%+v", config)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	//log.Printf("config=%+v", config)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

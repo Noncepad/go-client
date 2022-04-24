@@ -3,7 +3,6 @@ package basic
 import (
 	"encoding/json"
 	"errors"
-	"log"
 
 	pbb "github.com/noncepad/client/proto/base"
 	pbjob "github.com/noncepad/client/proto/job"
@@ -12,24 +11,26 @@ import (
 )
 
 type ValidatorLSArgs struct {
-	RequestWithJwt
 }
 
 type ValidatorInstance struct {
-	Id       string
-	Hostv4   string
-	Hostv6   string
-	Port     uint32
-	User     string
-	Password string
+	Id       string `json:"id"`
+	Hostv4   string `json:"hostv4"`
+	Hostv6   string `json:"hostv6"`
+	Port     uint32 `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
 }
 type ValidatorLSResults struct {
-	Instance []ValidatorInstance
+	Instance []ValidatorInstance `json:"instance"`
 }
 
 func (e1 Basic) ValidatorLS(args ValidatorLSArgs, results *ValidatorLSResults) error {
-
-	ans, err := e1.solanaClient.ListValidator(e1.Ctx(args.Token), &pbb.Empty{})
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
+	ans, err := e1.solanaClient.ListValidator(ctx, &pbb.Empty{})
 	if err != nil {
 		return err
 	}
@@ -46,8 +47,7 @@ func (e1 Basic) ValidatorLS(args ValidatorLSArgs, results *ValidatorLSResults) e
 }
 
 type ValidatorCreateArgs struct {
-	RequestWithJwt
-	Type util.ValidatorType
+	Type util.ValidatorType `json:"type"`
 }
 
 func (e1 Basic) ValidatorCreate(args ValidatorCreateArgs, results *Job) error {
@@ -55,7 +55,11 @@ func (e1 Basic) ValidatorCreate(args ValidatorCreateArgs, results *Job) error {
 	if err != nil {
 		return err
 	}
-	ans, err := e1.solanaClient.CreateValidator(e1.Ctx(args.Token), &pbsol.ValidatorCreateRequest{
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
+	ans, err := e1.solanaClient.CreateValidator(ctx, &pbsol.ValidatorCreateRequest{
 		Type: valType,
 	})
 	if err != nil {
@@ -67,13 +71,15 @@ func (e1 Basic) ValidatorCreate(args ValidatorCreateArgs, results *Job) error {
 }
 
 type ValidatorStatusArgs struct {
-	RequestWithJwt
-	JobId string
+	JobId string `json:"job_id"`
 }
 
 func (e1 Basic) ValidatorStatus(args ValidatorStatusArgs, results *ValidatorInstance) error {
-
-	ans, err := e1.jobClient.GetStatus(e1.Ctx(args.Token), &pbjob.StatusRequest{Id: args.JobId})
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
+	ans, err := e1.jobClient.GetStatus(ctx, &pbjob.StatusRequest{Id: args.JobId})
 	if err != nil {
 		return err
 	}
@@ -115,15 +121,18 @@ func instanceToResult(instance *pbsol.ValidatorInstance) ValidatorInstance {
 }
 
 type ValidatorDestroyArgs struct {
-	RequestWithJwt
-	Id string
+	Id string `json:"id"`
 }
 
 type ValidatorDestroyResults bool
 
 func (e1 Basic) ValidatorDestroy(args ValidatorDestroyArgs, results *ValidatorDestroyResults) error {
-	log.Printf("destroying id=%s", args.Id)
-	_, err := e1.solanaClient.DestroyValidator(e1.Ctx(args.Token), &pbsol.ValidatorDeleteRequest{Id: args.Id})
+
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
+	_, err = e1.solanaClient.DestroyValidator(ctx, &pbsol.ValidatorDeleteRequest{Id: args.Id})
 	if err != nil {
 		return err
 	}

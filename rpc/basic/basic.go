@@ -24,6 +24,7 @@ type Configuration struct {
 	Cacert    string `json:"cacert,omitempty"`
 	HostName  string `json:"hostname,omitempty"`
 	ListenUrl string `json:"listen"`
+	ApiKey    string `json:"api_key"`
 }
 
 func ConfigDefaultHostPort(c *Configuration) {
@@ -75,6 +76,11 @@ func ConfigFromEnv() (*Configuration, error) {
 		}
 	}
 
+	c.ApiKey, present = os.LookupEnv("API_KEY")
+	if !present {
+		return nil, errors.New("no API_KEY")
+	}
+
 	return c, nil
 }
 
@@ -85,11 +91,11 @@ type Basic struct {
 	version         string
 	serviceToString map[pbsaas.Service]string
 	serviceToEnum   map[string]pbsaas.Service
-
-	sessionClient pbt.SessionClient
-	saasClient    pbc.SaasClient
-	solanaClient  pbc.SolanaClient
-	jobClient     pbjob.OwnerClient
+	internalC       chan<- func(*internal)
+	sessionClient   pbt.SessionClient
+	saasClient      pbc.SaasClient
+	solanaClient    pbc.SolanaClient
+	jobClient       pbjob.OwnerClient
 }
 
 func Dial(ctx context.Context, config *Configuration) (*grpc.ClientConn, error) {
@@ -108,7 +114,7 @@ func Create(ctx context.Context, config *Configuration) (Basic, error) {
 	if err != nil {
 		return Basic{}, err
 	}
-
+	internalC := make(chan func(*internal), 10)
 	a, b := init_service()
 	// check for jwt
 	e1 := Basic{
@@ -117,20 +123,28 @@ func Create(ctx context.Context, config *Configuration) (Basic, error) {
 		ctx:             ctx,
 		serviceToString: a,
 		serviceToEnum:   b,
+		internalC:       internalC,
 		sessionClient:   pbt.NewSessionClient(conn),
 		saasClient:      pbc.NewSaasClient(conn),
 		solanaClient:    pbc.NewSolanaClient(conn),
 		jobClient:       pbjob.NewOwnerClient(conn),
 	}
 
+	go loopInternal(ctx, internalC, config.ApiKey, e1.sessionClient)
+
 	return e1, nil
 }
 
-type RequestWithJwt struct {
-	Token string
-}
+func (e1 Basic) Ctx() (context.Context, error) {
+	sessionC := make(chan *pbt.ApiKeySessionResponse, 1)
+	e1.internalC <- func(in *internal) {
+		sessionC <- in.look_up_by_api_key()
+	}
+	session := <-sessionC
+	if session == nil {
+		return nil, errors.New("api key is not valid")
+	}
 
-func (e1 Basic) Ctx(token string) context.Context {
 	// e1.session must be filled in first
-	return b1.SetCtx(e1.ctx, token)
+	return b1.SetCtx(e1.ctx, session.Jwt), nil
 }

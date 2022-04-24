@@ -14,8 +14,7 @@ type Job struct {
 }
 
 type JobStatusArgs struct {
-	RequestWithJwt
-	Id string
+	Id string `json:"id"`
 }
 
 func typeToString(jobType pbjob.JobType) (string, error) {
@@ -63,7 +62,11 @@ func jobToResult(job *pbjob.Job) (*Job, error) {
 }
 
 func (e1 Basic) JobStatus(args JobStatusArgs, results *Job) error {
-	ans, err := e1.jobClient.GetStatus(e1.Ctx(args.Token), &pbjob.StatusRequest{Id: args.Id})
+	ctx, err := e1.Ctx()
+	if err != nil {
+		return err
+	}
+	ans, err := e1.jobClient.GetStatus(ctx, &pbjob.StatusRequest{Id: args.Id})
 	if err != nil {
 		return err
 	}

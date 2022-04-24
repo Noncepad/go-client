@@ -1,31 +1,53 @@
 package basic
 
 import (
+	"context"
 	"errors"
+	"log"
+	"time"
 
 	pbt "github.com/noncepad/client/proto/auth"
 )
 
-type RefreshArgs struct {
-	ApiKey string
-}
-type RefreshResults struct {
-	Token  string
-	Expire int64
+func (in *internal) look_up_by_api_key() *pbt.ApiKeySessionResponse {
+	if in.session == nil {
+		err := in.refresh()
+		if err != nil {
+			return nil
+		}
+	}
+
+	return in.session
 }
 
-func (e1 Basic) Refresh(args RefreshArgs, results *RefreshResults) error {
+func (in *internal) refresh() error {
 
-	ans, err := e1.sessionClient.CreateByApiKey(e1.ctx, &pbt.ApiKeySessionRequest{Key: args.ApiKey})
+	ans, err := in.sessionClient.CreateByApiKey(in.ctx, &pbt.ApiKeySessionRequest{Key: in.key})
 	if err != nil {
+		log.Print(err)
 		return err
+	} else {
+		if ans.Detail == nil {
+			log.Print("serverside error")
+			return errors.New("serverside error")
+		}
+		t := time.Unix(ans.Detail.Expire, 0)
+		if t.Before(time.Now()) {
+			log.Print("session expired")
+			return errors.New("session expired from server")
+		}
+		in.session = ans
+		go loopDelete(in.ctx, t, in.deleteC)
+		return nil
 	}
+}
 
-	if ans.Detail == nil {
-		return errors.New("no detail")
+func loopDelete(ctx context.Context, expire time.Time, deleteC chan<- struct{}) {
+	timeC := time.After(time.Until(expire))
+	doneC := ctx.Done()
+	select {
+	case <-timeC:
+		deleteC <- struct{}{}
+	case <-doneC:
 	}
-
-	*results = RefreshResults{Token: ans.Jwt, Expire: ans.Detail.Expire}
-
-	return nil
 }
