@@ -9,6 +9,30 @@ import (
 	pbt "github.com/noncepad/client/proto/auth"
 )
 
+type GetJwtArgs struct {
+}
+
+type GetJwtResponse struct {
+	Jwt string `json:"token"`
+}
+
+func (e1 Basic) GetJwt(args GetJwtArgs, results *GetJwtResponse) error {
+	ans := e1.look_up_by_api_key()
+	if ans == nil {
+		return errors.New("no session token")
+	}
+	*results = GetJwtResponse{Jwt: ans.GetJwt()}
+	return nil
+}
+
+func (e1 Basic) look_up_by_api_key() *pbt.ApiKeySessionResponse {
+	ansC := make(chan *pbt.ApiKeySessionResponse, 1)
+	e1.internalC <- func(in *internal) {
+		ansC <- in.look_up_by_api_key()
+	}
+	return <-ansC
+}
+
 func (in *internal) look_up_by_api_key() *pbt.ApiKeySessionResponse {
 	if in.session == nil {
 		err := in.refresh()

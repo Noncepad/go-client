@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"net/rpc/jsonrpc"
+	"net/url"
 	"time"
 
 	basic "github.com/noncepad/client/rpc/basic"
@@ -19,7 +20,12 @@ type external struct {
 func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- error) error {
 	server := rpc.NewServer()
 
-	err := server.Register(new(test.Arith))
+	validatorUrl, err := url.Parse(config.ValidatorRpcUrl)
+	if err != nil {
+		return err
+	}
+
+	err = server.Register(new(test.Arith))
 	if err != nil {
 		log.Print(err)
 		return err
@@ -42,6 +48,7 @@ func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- e
 	}
 
 	s := new(Server)
+	s.validator = validatorUrl
 	s.Rpc = server
 	s.b = b
 
@@ -61,8 +68,9 @@ func Run(ctx context.Context, config *basic.Configuration, serverErrorC chan<- e
 }
 
 type Server struct {
-	Rpc *rpc.Server
-	b   basic.Basic
+	validator *url.URL
+	Rpc       *rpc.Server
+	b         basic.Basic
 }
 
 type HttpConn struct {
@@ -76,7 +84,6 @@ func (c *HttpConn) Close() error                      { return nil }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/jsonrpc" {
-
 		serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(200)
@@ -84,6 +91,43 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Error while serving JSON request: %v", err)
 			http.Error(w, "Error while serving JSON request, details have been logged.", 500)
+			return
+		}
+	} else if r.Method == "POST" {
+		jwtResults := new(basic.GetJwtResponse)
+		err := s.b.GetJwt(basic.GetJwtArgs{}, jwtResults)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Unauthorized API Key", 403)
+			return
+		}
+
+		// proxy
+		//adding the proxy settings to the Transport object
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(s.validator),
+		}
+		client := &http.Client{
+			Transport: transport,
+		}
+		request, err := http.NewRequest("POST", r.URL.String(), r.Body)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error while proxying", 500)
+			return
+		}
+		request.Header["JWT"] = []string{jwtResults.Jwt}
+
+		response, err := client.Do(request)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error while proxying", 500)
+			return
+		}
+		_, err = io.Copy(w, response.Body)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error while proxying", 500)
 			return
 		}
 	}

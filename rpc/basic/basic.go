@@ -20,13 +20,15 @@ import (
 )
 
 type Configuration struct {
-	UseSSL    bool   `json:"ssl"`
-	Host      string `json:"host"`
-	Port      uint16 `json:"port"`
-	Cacert    string `json:"cacert,omitempty"`
-	HostName  string `json:"hostname,omitempty"`
-	ListenUrl string `json:"listen"`
-	ApiKey    string `json:"api_key"`
+	UseSSL          bool   `json:"ssl"`
+	Host            string `json:"host"`
+	Port            uint16 `json:"port"`
+	Cacert          string `json:"cacert,omitempty"`
+	HostName        string `json:"hostname,omitempty"`
+	ListenUrl       string `json:"listen"`
+	ApiKey          string `json:"api_key"`
+	ValidatorRpcUrl string `json:"validator_rpc"`
+	ValidatorWsUrl  string `json:"validator_ws"`
 }
 
 func ConfigDefaultHostPort(c *Configuration) {
@@ -36,6 +38,8 @@ func ConfigDefaultHostPort(c *Configuration) {
 	c.Port = 443
 	c.UseSSL = true
 	c.ListenUrl = "0.0.0.0:8080"
+	c.ValidatorRpcUrl = "https://node.test.noncepad.com"
+	c.ValidatorWsUrl = "wss://node.test.noncepad.com"
 }
 
 func ConfigFromEnv() (*Configuration, error) {
