@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -104,13 +105,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// proxy
 		//adding the proxy settings to the Transport object
-		transport := &http.Transport{
-			Proxy: http.ProxyURL(s.validator),
-		}
-		client := &http.Client{
-			Transport: transport,
-		}
-		request, err := http.NewRequest("POST", r.URL.String(), r.Body)
+
+		client := &http.Client{}
+		request, err := http.NewRequest("POST", fmt.Sprintf("https://%s%s", s.validator.Host, r.URL.Path), r.Body)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Error while proxying", 500)
@@ -124,6 +121,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Error while proxying", 500)
 			return
 		}
+
 		_, err = io.Copy(w, response.Body)
 		if err != nil {
 			log.Println(err)
