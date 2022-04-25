@@ -96,37 +96,53 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == "POST" {
 		jwtResults := new(basic.GetJwtResponse)
+
 		err := s.b.GetJwt(basic.GetJwtArgs{}, jwtResults)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			http.Error(w, "Unauthorized API Key", 403)
 			return
 		}
 
 		// proxy
 		//adding the proxy settings to the Transport object
-
+		//log.Printf("host=%s", s.validator.Host)
 		client := &http.Client{}
-		request, err := http.NewRequest("POST", fmt.Sprintf("https://%s%s", s.validator.Host, r.URL.Path), r.Body)
+		request, err := http.NewRequest("POST", fmt.Sprintf("https://%s/solana/validator", s.validator.Host), r.Body)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Error while proxying", 500)
 			return
 		}
+
+		copyHeader(request.Header, r.Header)
 		request.Header["JWT"] = []string{jwtResults.Jwt}
+		request.Header["Cluster"] = []string{"mainnet-beta"}
 
 		response, err := client.Do(request)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			http.Error(w, "Error while proxying", 500)
 			return
 		}
+		defer response.Body.Close()
+		copyHeader(w.Header(), response.Header)
 
 		_, err = io.Copy(w, response.Body)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			http.Error(w, "Error while proxying", 500)
 			return
+		}
+		//w.WriteHeader(response.StatusCode)
+
+	}
+}
+
+func copyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
 		}
 	}
 }
