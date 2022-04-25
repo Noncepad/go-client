@@ -22,6 +22,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Cluster int32
+
+const (
+	Cluster_MAIN  Cluster = 0
+	Cluster_TEST  Cluster = 1
+	Cluster_DEV   Cluster = 2
+	Cluster_LOCAL Cluster = 3
+)
+
+// Enum value maps for Cluster.
+var (
+	Cluster_name = map[int32]string{
+		0: "MAIN",
+		1: "TEST",
+		2: "DEV",
+		3: "LOCAL",
+	}
+	Cluster_value = map[string]int32{
+		"MAIN":  0,
+		"TEST":  1,
+		"DEV":   2,
+		"LOCAL": 3,
+	}
+)
+
+func (x Cluster) Enum() *Cluster {
+	p := new(Cluster)
+	*p = x
+	return p
+}
+
+func (x Cluster) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Cluster) Descriptor() protoreflect.EnumDescriptor {
+	return file_solana_proto_enumTypes[0].Descriptor()
+}
+
+func (Cluster) Type() protoreflect.EnumType {
+	return &file_solana_proto_enumTypes[0]
+}
+
+func (x Cluster) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Cluster.Descriptor instead.
+func (Cluster) EnumDescriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{0}
+}
+
 type ValidatorType int32
 
 const (
@@ -55,11 +107,11 @@ func (x ValidatorType) String() string {
 }
 
 func (ValidatorType) Descriptor() protoreflect.EnumDescriptor {
-	return file_solana_proto_enumTypes[0].Descriptor()
+	return file_solana_proto_enumTypes[1].Descriptor()
 }
 
 func (ValidatorType) Type() protoreflect.EnumType {
-	return &file_solana_proto_enumTypes[0]
+	return &file_solana_proto_enumTypes[1]
 }
 
 func (x ValidatorType) Number() protoreflect.EnumNumber {
@@ -68,7 +120,7 @@ func (x ValidatorType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ValidatorType.Descriptor instead.
 func (ValidatorType) EnumDescriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{0}
+	return file_solana_proto_rawDescGZIP(), []int{1}
 }
 
 type ConfirmationLevel int32
@@ -104,11 +156,11 @@ func (x ConfirmationLevel) String() string {
 }
 
 func (ConfirmationLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_solana_proto_enumTypes[1].Descriptor()
+	return file_solana_proto_enumTypes[2].Descriptor()
 }
 
 func (ConfirmationLevel) Type() protoreflect.EnumType {
-	return &file_solana_proto_enumTypes[1]
+	return &file_solana_proto_enumTypes[2]
 }
 
 func (x ConfirmationLevel) Number() protoreflect.EnumNumber {
@@ -117,7 +169,7 @@ func (x ConfirmationLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfirmationLevel.Descriptor instead.
 func (ConfirmationLevel) EnumDescriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{1}
+	return file_solana_proto_rawDescGZIP(), []int{2}
 }
 
 type LinkRequest struct {
@@ -1312,6 +1364,7 @@ type SendBatchRequest struct {
 
 	Tx                [][]byte          `protobuf:"bytes,1,rep,name=tx,proto3" json:"tx,omitempty"`
 	ConfirmationLevel ConfirmationLevel `protobuf:"varint,2,opt,name=confirmation_level,json=confirmationLevel,proto3,enum=solana.ConfirmationLevel" json:"confirmation_level,omitempty"`
+	Cluster           Cluster           `protobuf:"varint,3,opt,name=cluster,proto3,enum=solana.Cluster" json:"cluster,omitempty"`
 }
 
 func (x *SendBatchRequest) Reset() {
@@ -1358,6 +1411,13 @@ func (x *SendBatchRequest) GetConfirmationLevel() ConfirmationLevel {
 		return x.ConfirmationLevel
 	}
 	return ConfirmationLevel_PROCESSED
+}
+
+func (x *SendBatchRequest) GetCluster() Cluster {
+	if x != nil {
+		return x.Cluster
+	}
+	return Cluster_MAIN
 }
 
 type SendBatchResponse struct {
@@ -1542,27 +1602,33 @@ var file_solana_proto_rawDesc = []byte{
 	0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x29, 0x0a, 0x04,
 	0x74, 0x79, 0x70, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x15, 0x2e, 0x73, 0x6f, 0x6c,
 	0x61, 0x6e, 0x61, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x54, 0x79, 0x70,
-	0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x6c, 0x0a, 0x10, 0x53, 0x65, 0x6e, 0x64, 0x42,
-	0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x74,
-	0x78, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x02, 0x74, 0x78, 0x12, 0x48, 0x0a, 0x12, 0x63,
-	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x65, 0x76, 0x65,
-	0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x19, 0x2e, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61,
-	0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76,
-	0x65, 0x6c, 0x52, 0x11, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x4c, 0x65, 0x76, 0x65, 0x6c, 0x22, 0x31, 0x0a, 0x11, 0x53, 0x65, 0x6e, 0x64, 0x42, 0x61, 0x74,
-	0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x69,
-	0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x09, 0x73,
-	0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x2a, 0x39, 0x0a, 0x0d, 0x56, 0x61, 0x6c, 0x69,
-	0x64, 0x61, 0x74, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x4d, 0x41, 0x49,
-	0x4e, 0x4e, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x45, 0x56, 0x4e, 0x45, 0x54,
-	0x10, 0x01, 0x12, 0x0f, 0x0a, 0x0b, 0x4d, 0x41, 0x49, 0x4e, 0x4e, 0x45, 0x54, 0x5f, 0x54, 0x50,
-	0x55, 0x10, 0x02, 0x2a, 0x40, 0x0a, 0x11, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x0d, 0x0a, 0x09, 0x50, 0x52, 0x4f, 0x43,
-	0x45, 0x53, 0x53, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f, 0x4e, 0x46, 0x49,
-	0x52, 0x4d, 0x45, 0x44, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x46, 0x49, 0x4e, 0x41, 0x4c, 0x49,
-	0x5a, 0x45, 0x44, 0x10, 0x02, 0x42, 0x1f, 0x5a, 0x1d, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x70, 0x61,
-	0x64, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x66, 0x69, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x97, 0x01, 0x0a, 0x10, 0x53, 0x65, 0x6e, 0x64,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02,
+	0x74, 0x78, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x02, 0x74, 0x78, 0x12, 0x48, 0x0a, 0x12,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x65, 0x76,
+	0x65, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x19, 0x2e, 0x73, 0x6f, 0x6c, 0x61, 0x6e,
+	0x61, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65,
+	0x76, 0x65, 0x6c, 0x52, 0x11, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x29, 0x0a, 0x07, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65,
+	0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0f, 0x2e, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61,
+	0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x07, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65,
+	0x72, 0x22, 0x31, 0x0a, 0x11, 0x53, 0x65, 0x6e, 0x64, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74,
+	0x75, 0x72, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61,
+	0x74, 0x75, 0x72, 0x65, 0x2a, 0x31, 0x0a, 0x07, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12,
+	0x08, 0x0a, 0x04, 0x4d, 0x41, 0x49, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x45, 0x53,
+	0x54, 0x10, 0x01, 0x12, 0x07, 0x0a, 0x03, 0x44, 0x45, 0x56, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05,
+	0x4c, 0x4f, 0x43, 0x41, 0x4c, 0x10, 0x03, 0x2a, 0x39, 0x0a, 0x0d, 0x56, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x4d, 0x41, 0x49, 0x4e,
+	0x4e, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x45, 0x56, 0x4e, 0x45, 0x54, 0x10,
+	0x01, 0x12, 0x0f, 0x0a, 0x0b, 0x4d, 0x41, 0x49, 0x4e, 0x4e, 0x45, 0x54, 0x5f, 0x54, 0x50, 0x55,
+	0x10, 0x02, 0x2a, 0x40, 0x0a, 0x11, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x0d, 0x0a, 0x09, 0x50, 0x52, 0x4f, 0x43, 0x45,
+	0x53, 0x53, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x52,
+	0x4d, 0x45, 0x44, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x46, 0x49, 0x4e, 0x41, 0x4c, 0x49, 0x5a,
+	0x45, 0x44, 0x10, 0x02, 0x42, 0x1f, 0x5a, 0x1d, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x70, 0x61, 0x64,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x66, 0x69, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x73,
+	0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1577,67 +1643,69 @@ func file_solana_proto_rawDescGZIP() []byte {
 	return file_solana_proto_rawDescData
 }
 
-var file_solana_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_solana_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_solana_proto_goTypes = []interface{}{
-	(ValidatorType)(0),               // 0: solana.ValidatorType
-	(ConfirmationLevel)(0),           // 1: solana.ConfirmationLevel
-	(*LinkRequest)(nil),              // 2: solana.LinkRequest
-	(*LinkResponse)(nil),             // 3: solana.LinkResponse
-	(*WalletRoot)(nil),               // 4: solana.WalletRoot
-	(*Wallet)(nil),                   // 5: solana.Wallet
-	(*WalletRootPlainText)(nil),      // 6: solana.WalletRootPlainText
-	(*Account)(nil),                  // 7: solana.Account
-	(*Token)(nil),                    // 8: solana.Token
-	(*Mint)(nil),                     // 9: solana.Mint
-	(*Transaction)(nil),              // 10: solana.Transaction
-	(*AccountSubscribeRequest)(nil),  // 11: solana.AccountSubscribeRequest
-	(*AccountSubscribeResponse)(nil), // 12: solana.AccountSubscribeResponse
-	(*Balance)(nil),                  // 13: solana.Balance
-	(*TokenRequest)(nil),             // 14: solana.TokenRequest
-	(*TokenResponse)(nil),            // 15: solana.TokenResponse
-	(*SaveTokenRequest)(nil),         // 16: solana.SaveTokenRequest
-	(*ValidatorCreateRequest)(nil),   // 17: solana.ValidatorCreateRequest
-	(*ValidatorDeleteRequest)(nil),   // 18: solana.ValidatorDeleteRequest
-	(*ValidatorList)(nil),            // 19: solana.ValidatorList
-	(*ValidatorInstance)(nil),        // 20: solana.ValidatorInstance
-	(*SendBatchRequest)(nil),         // 21: solana.SendBatchRequest
-	(*SendBatchResponse)(nil),        // 22: solana.SendBatchResponse
-	nil,                              // 23: solana.LinkResponse.AccountEntry
-	nil,                              // 24: solana.Balance.AccountEntry
-	(*ledger.Account)(nil),           // 25: ledger.Account
-	(*base.Empty)(nil),               // 26: base.Empty
-	(*base.ShortCommodity)(nil),      // 27: base.ShortCommodity
-	(*base.LanguageTranslation)(nil), // 28: base.LanguageTranslation
+	(Cluster)(0),                     // 0: solana.Cluster
+	(ValidatorType)(0),               // 1: solana.ValidatorType
+	(ConfirmationLevel)(0),           // 2: solana.ConfirmationLevel
+	(*LinkRequest)(nil),              // 3: solana.LinkRequest
+	(*LinkResponse)(nil),             // 4: solana.LinkResponse
+	(*WalletRoot)(nil),               // 5: solana.WalletRoot
+	(*Wallet)(nil),                   // 6: solana.Wallet
+	(*WalletRootPlainText)(nil),      // 7: solana.WalletRootPlainText
+	(*Account)(nil),                  // 8: solana.Account
+	(*Token)(nil),                    // 9: solana.Token
+	(*Mint)(nil),                     // 10: solana.Mint
+	(*Transaction)(nil),              // 11: solana.Transaction
+	(*AccountSubscribeRequest)(nil),  // 12: solana.AccountSubscribeRequest
+	(*AccountSubscribeResponse)(nil), // 13: solana.AccountSubscribeResponse
+	(*Balance)(nil),                  // 14: solana.Balance
+	(*TokenRequest)(nil),             // 15: solana.TokenRequest
+	(*TokenResponse)(nil),            // 16: solana.TokenResponse
+	(*SaveTokenRequest)(nil),         // 17: solana.SaveTokenRequest
+	(*ValidatorCreateRequest)(nil),   // 18: solana.ValidatorCreateRequest
+	(*ValidatorDeleteRequest)(nil),   // 19: solana.ValidatorDeleteRequest
+	(*ValidatorList)(nil),            // 20: solana.ValidatorList
+	(*ValidatorInstance)(nil),        // 21: solana.ValidatorInstance
+	(*SendBatchRequest)(nil),         // 22: solana.SendBatchRequest
+	(*SendBatchResponse)(nil),        // 23: solana.SendBatchResponse
+	nil,                              // 24: solana.LinkResponse.AccountEntry
+	nil,                              // 25: solana.Balance.AccountEntry
+	(*ledger.Account)(nil),           // 26: ledger.Account
+	(*base.Empty)(nil),               // 27: base.Empty
+	(*base.ShortCommodity)(nil),      // 28: base.ShortCommodity
+	(*base.LanguageTranslation)(nil), // 29: base.LanguageTranslation
 }
 var file_solana_proto_depIdxs = []int32{
-	23, // 0: solana.LinkResponse.account:type_name -> solana.LinkResponse.AccountEntry
-	6,  // 1: solana.WalletRoot.plaintext:type_name -> solana.WalletRootPlainText
-	25, // 2: solana.Account.account:type_name -> ledger.Account
-	26, // 3: solana.Account.sol:type_name -> base.Empty
-	8,  // 4: solana.Account.token:type_name -> solana.Token
-	27, // 5: solana.Token.commodity:type_name -> base.ShortCommodity
-	9,  // 6: solana.Token.mint:type_name -> solana.Mint
-	7,  // 7: solana.Transaction.input:type_name -> solana.Account
-	13, // 8: solana.AccountSubscribeResponse.balance:type_name -> solana.Balance
-	10, // 9: solana.AccountSubscribeResponse.transaction:type_name -> solana.Transaction
-	24, // 10: solana.Balance.account:type_name -> solana.Balance.AccountEntry
-	27, // 11: solana.TokenRequest.commodity:type_name -> base.ShortCommodity
-	26, // 12: solana.TokenRequest.blank:type_name -> base.Empty
-	8,  // 13: solana.TokenResponse.list:type_name -> solana.Token
-	27, // 14: solana.SaveTokenRequest.commodity:type_name -> base.ShortCommodity
-	28, // 15: solana.SaveTokenRequest.description:type_name -> base.LanguageTranslation
-	0,  // 16: solana.ValidatorCreateRequest.type:type_name -> solana.ValidatorType
-	20, // 17: solana.ValidatorList.instance:type_name -> solana.ValidatorInstance
-	0,  // 18: solana.ValidatorInstance.type:type_name -> solana.ValidatorType
-	1,  // 19: solana.SendBatchRequest.confirmation_level:type_name -> solana.ConfirmationLevel
-	7,  // 20: solana.LinkResponse.AccountEntry.value:type_name -> solana.Account
-	7,  // 21: solana.Balance.AccountEntry.value:type_name -> solana.Account
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	24, // 0: solana.LinkResponse.account:type_name -> solana.LinkResponse.AccountEntry
+	7,  // 1: solana.WalletRoot.plaintext:type_name -> solana.WalletRootPlainText
+	26, // 2: solana.Account.account:type_name -> ledger.Account
+	27, // 3: solana.Account.sol:type_name -> base.Empty
+	9,  // 4: solana.Account.token:type_name -> solana.Token
+	28, // 5: solana.Token.commodity:type_name -> base.ShortCommodity
+	10, // 6: solana.Token.mint:type_name -> solana.Mint
+	8,  // 7: solana.Transaction.input:type_name -> solana.Account
+	14, // 8: solana.AccountSubscribeResponse.balance:type_name -> solana.Balance
+	11, // 9: solana.AccountSubscribeResponse.transaction:type_name -> solana.Transaction
+	25, // 10: solana.Balance.account:type_name -> solana.Balance.AccountEntry
+	28, // 11: solana.TokenRequest.commodity:type_name -> base.ShortCommodity
+	27, // 12: solana.TokenRequest.blank:type_name -> base.Empty
+	9,  // 13: solana.TokenResponse.list:type_name -> solana.Token
+	28, // 14: solana.SaveTokenRequest.commodity:type_name -> base.ShortCommodity
+	29, // 15: solana.SaveTokenRequest.description:type_name -> base.LanguageTranslation
+	1,  // 16: solana.ValidatorCreateRequest.type:type_name -> solana.ValidatorType
+	21, // 17: solana.ValidatorList.instance:type_name -> solana.ValidatorInstance
+	1,  // 18: solana.ValidatorInstance.type:type_name -> solana.ValidatorType
+	2,  // 19: solana.SendBatchRequest.confirmation_level:type_name -> solana.ConfirmationLevel
+	0,  // 20: solana.SendBatchRequest.cluster:type_name -> solana.Cluster
+	8,  // 21: solana.LinkResponse.AccountEntry.value:type_name -> solana.Account
+	8,  // 22: solana.Balance.AccountEntry.value:type_name -> solana.Account
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_solana_proto_init() }
@@ -1920,7 +1988,7 @@ func file_solana_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_solana_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,

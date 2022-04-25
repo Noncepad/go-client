@@ -13,6 +13,7 @@ import (
 type SendBatchArgs struct {
 	Tx              []string `json:"tx"`
 	CommitmentLevel string   `json:"commitment"`
+	Cluster         string   `json:"cluster,omitempty"`
 }
 
 type SendBatchResponse struct {
@@ -44,6 +45,19 @@ func (e1 Basic) SendTx(args SendBatchArgs, results *SendTxJob) error {
 		return err
 	}
 	payload := &pbsol.SendBatchRequest{}
+
+	switch args.Cluster {
+	case "main":
+		payload.Cluster = pbsol.Cluster_MAIN
+	case "test":
+		payload.Cluster = pbsol.Cluster_TEST
+	case "dev":
+		payload.Cluster = pbsol.Cluster_DEV
+	case "local":
+		payload.Cluster = pbsol.Cluster_LOCAL
+	default:
+		payload.Cluster = pbsol.Cluster_MAIN
+	}
 
 	switch args.CommitmentLevel {
 	case "finalized":
